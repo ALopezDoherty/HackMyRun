@@ -32,7 +32,7 @@ class RoutePreference(models.Model):
     def __str__(self):
         return f"Preferences for {self.user.username}"
 
-# NEW: Models for gamification
+# Leaderboard & Badges
 class UserProfile(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
     total_miles = models.FloatField(default=0)

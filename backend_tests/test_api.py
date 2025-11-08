@@ -1,89 +1,118 @@
+# test_api.py
 import requests
 import json
-from config import BASE_URL
+from config import BASE_URL, ENDPOINTS
 
 def test_backend_apis():
     """
-    Comprehensive test script for Siress backend APIs
+    Test script for HackMyRun backend APIs
     """
-    print('\n=== SIRESS BACKEND API TESTS ===\n')
+    print('\n=== HACKMYRUN BACKEND API TESTS ===\n')
     
-    # Test 1: Authentication
-    print('1. Testing Authentication...')
-    auth_response = requests.post(f"{BASE_URL}/api/auth/login", 
-                                 json={"email": "test@example.com", "password": "test123"})
+    # Test 1: Generate Routes
+    print('1. Testing Route Generation...')
+    route_payload = {
+        "start_address": "Central Park, New York",
+        "end_address": "Times Square, New York", 
+        "distance": 5.0,
+        "mode": "endurance",
+        "is_loop": False
+    }
     
-    if auth_response.status_code == 200:
-        auth_data = auth_response.json()
-        token = auth_data.get('token', '')
-        print(f'✓ Authentication SUCCESS - Token received')
+    generate_response = requests.post(
+        f"{BASE_URL}{ENDPOINTS['generate_routes']}", 
+        json=route_payload
+    )
+    
+    if generate_response.status_code == 200:
+        route_data = generate_response.json()
+        routes_count = len(route_data.get('routes', []))
+        print(f'SUCCESS: Route Generation - Created {routes_count} routes')
+        
+        # Save first route for later tests
+        if routes_count > 0:
+            first_route = route_data['routes'][0]
     else:
-        print(f'✗ Authentication FAILED: {auth_response.status_code}')
+        print(f'ERROR: Route Generation failed - {generate_response.status_code}')
+        print(f'Response: {generate_response.text}')
         return
     
-    headers = {'Authorization': f'Bearer {token}'}
-    
-    # Test 2: User Profile
-    print('\n2. Testing User Profile...')
-    profile_response = requests.get(f"{BASE_URL}/api/user/profile", headers=headers)
-    
-    if profile_response.status_code == 200:
-        profile_data = profile_response.json()
-        print(f'✓ Profile SUCCESS - User: {profile_data.get("username", "N/A")}')
-    else:
-        print(f'✗ Profile failed: {profile_response.status_code}')
-    
-    # Test 3: Route Planning
-    print('\n3. Testing Route Planning...')
-    route_payload = {
-        "start": "40.7128,-74.0060",
-        "end": "40.7282,-73.7942",
-        "preferences": {"scenic": True, "elevation": "moderate"}
+    # Test 2: Save Route
+    print('\n2. Testing Save Route...')
+    save_payload = {
+        "name": "Test Run Route",
+        "start_address": "Central Park, New York",
+        "end_address": "Times Square, New York",
+        "distance": 5.0,
+        "is_loop": False,
+        "mode": "endurance",
+        "route_data": first_route
     }
-    route_response = requests.post(f"{BASE_URL}/api/route/plan", 
-                                  json=route_payload, headers=headers)
     
-    if route_response.status_code == 200:
-        route_data = route_response.json()
-        routes_count = len(route_data.get('routes', []))
-        print(f'✓ Route Planning SUCCESS - Generated {routes_count} routes')
-    else:
-        print(f'✗ Route Planning failed: {route_response.status_code}')
-    
-    # Test 4: Save Route
-    print('\n4. Testing Save Route...')
-    save_response = requests.post(f"{BASE_URL}/api/route/save", 
-                                 json={"route_id": "test_route_123"}, headers=headers)
+    save_response = requests.post(
+        f"{BASE_URL}{ENDPOINTS['save_route']}", 
+        json=save_payload
+    )
     
     if save_response.status_code == 200:
-        print('✓ Save Route SUCCESS')
+        save_data = save_response.json()
+        print(f'SUCCESS: Save Route - ID: {save_data.get("route_id")}')
     else:
-        print(f'✗ Save Route failed: {save_response.status_code}')
+        print(f'ERROR: Save Route failed - {save_response.status_code}')
     
-    # Test 5: Leaderboard
-    print('\n5. Testing Leaderboard...')
-    leaderboard_response = requests.get(f"{BASE_URL}/api/leaderboard", headers=headers)
+    # Test 3: Get Saved Routes
+    print('\n3. Testing Get Saved Routes...')
+    saved_response = requests.get(f"{BASE_URL}{ENDPOINTS['saved_routes']}")
+    
+    if saved_response.status_code == 200:
+        saved_data = saved_response.json()
+        routes_count = len(saved_data.get('routes', []))
+        print(f'SUCCESS: Saved Routes - Found {routes_count} routes')
+    else:
+        print(f'ERROR: Saved Routes failed - {saved_response.status_code}')
+    
+    # Test 4: Leaderboard
+    print('\n4. Testing Leaderboard...')
+    leaderboard_response = requests.get(f"{BASE_URL}{ENDPOINTS['leaderboard']}")
     
     if leaderboard_response.status_code == 200:
         leaderboard_data = leaderboard_response.json()
-        print(f'✓ Leaderboard SUCCESS - {len(leaderboard_data.get("users", []))} users')
+        users_count = len(leaderboard_data.get('leaderboard', []))
+        print(f'SUCCESS: Leaderboard - Found {users_count} users')
     else:
-        print(f'✗ Leaderboard failed: {leaderboard_response.status_code}')
+        print(f'ERROR: Leaderboard failed - {leaderboard_response.status_code}')
+    
+    # Test 5: Record a Run
+    print('\n5. Testing Record Run...')
+    record_payload = {
+        "miles": 3.5
+    }
+    
+    record_response = requests.post(
+        f"{BASE_URL}{ENDPOINTS['record_run']}", 
+        json=record_payload
+    )
+    
+    if record_response.status_code == 200:
+        record_data = record_response.json()
+        print(f'SUCCESS: Record Run - {record_data.get("message")}')
+    else:
+        print(f'ERROR: Record Run failed - {record_response.status_code}')
     
     # Test 6: User Stats
     print('\n6. Testing User Stats...')
-    stats_response = requests.get(f"{BASE_URL}/api/user-stats", headers=headers)
+    stats_response = requests.get(f"{BASE_URL}{ENDPOINTS['user_stats']}")
     
     if stats_response.status_code == 200:
         stats_data = stats_response.json()
         total_miles = stats_data.get('stats', {}).get('total_miles', 0)
         badges_count = len(stats_data.get('badges', []))
-        print(f'✓ User Stats: {total_miles} total miles')
-        print(f'✓ Badges earned: {badges_count}')
+        print(f'SUCCESS: User Stats - {total_miles} total miles')
+        print(f'SUCCESS: Badges earned - {badges_count}')
     else:
-        print(f'✗ User stats failed: {stats_response.status_code}')
+        print(f'ERROR: User stats failed - {stats_response.status_code}')
     
-    print('\n=== SIRESS TEST COMPLETE ===')
+    print('\n=== TEST COMPLETE ===')
 
 if __name__ == "__main__":
     test_backend_apis()
