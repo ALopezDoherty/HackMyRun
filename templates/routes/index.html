@@ -1,0 +1,413 @@
+{% extends 'base.html' %} {% load static %} {% block content %}
+<h2>HackMyRun - Complete Testing Interface</h2>
+
+<div class="test-section">
+  <h3>1. Generate Routes</h3>
+
+  <div class="form-group">
+    <label>
+      <input type="checkbox" id="is-loop" onchange="toggleLoopOption()" />
+      Make this a loop (end where you start)
+    </label>
+  </div>
+
+  <div class="form-group">
+    <label>Start Address:</label>
+    <input
+      type="text"
+      id="start-address"
+      placeholder="Enter start address"
+      style="width: 300px"
+    />
+  </div>
+
+  <div class="form-group" id="end-address-section" style="display: none">
+    <label>End Address:</label>
+    <input
+      type="text"
+      id="end-address"
+      placeholder="Enter end address"
+      style="width: 300px"
+    />
+  </div>
+
+  <div class="form-group">
+    <label>Distance (km):</label>
+    <input
+      type="number"
+      id="distance"
+      placeholder="Distance"
+      value="5"
+      min="1"
+      max="50"
+      style="width: 100px"
+    />
+  </div>
+
+  <div class="form-group">
+    <label>Route Mode:</label>
+    <select id="mode">
+      <option value="endurance">Endurance (Flat Routes)</option>
+      <option value="conditioning">Conditioning (Hilly Routes)</option>
+    </select>
+  </div>
+
+  <button onclick="generateRoutes()">Generate Routes</button>
+  <div id="generate-result" class="result-box"></div>
+</div>
+
+<div class="test-section">
+  <h3>2. Save Route</h3>
+  <div class="form-group">
+    <input
+      type="text"
+      id="route-name"
+      placeholder="Route name"
+      style="width: 200px"
+    />
+    <button onclick="saveRoute()">Save Current Route</button>
+  </div>
+  <div id="save-result" class="result-box"></div>
+</div>
+
+<div class="test-section">
+  <h3>3. Get Saved Routes</h3>
+  <button onclick="getSavedRoutes()">Get Saved Routes</button>
+  <div id="saved-result" class="result-box"></div>
+</div>
+
+<div class="test-section">
+  <h3>4. Gamification Features</h3>
+  <div class="form-group">
+    <label>Record Run (miles):</label>
+    <input
+      type="number"
+      id="miles-run"
+      placeholder="Miles"
+      value="3"
+      min="0.1"
+      max="50"
+      step="0.1"
+      style="width: 100px"
+    />
+    <button onclick="recordRun()">Record Run</button>
+  </div>
+  <button onclick="getLeaderboard()">Get Leaderboard</button>
+  <button onclick="getUserStats()">Get My Stats</button>
+  <div id="gamification-result" class="result-box"></div>
+</div>
+
+<div class="test-section">
+  <h3>5. Current Route Data</h3>
+  <pre id="current-route">No route generated yet</pre>
+</div>
+
+<style>
+  .test-section {
+    border: 1px solid #ddd;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 5px;
+  }
+  .form-group {
+    margin: 10px 0;
+  }
+  .result-box {
+    background: #f5f5f5;
+    padding: 10px;
+    margin: 10px 0;
+    border-radius: 3px;
+    min-height: 20px;
+    font-family: monospace;
+    font-size: 12px;
+    white-space: pre-wrap;
+  }
+  button {
+    background: #007bff;
+    color: white;
+    border: none;
+    padding: 8px 15px;
+    margin: 0 5px;
+    border-radius: 3px;
+    cursor: pointer;
+  }
+  button:hover {
+    background: #0056b3;
+  }
+  input,
+  select {
+    padding: 8px;
+    margin: 0 5px;
+    border: 1px solid #ddd;
+    border-radius: 3px;
+  }
+</style>
+{% endblock %} {% block extra_js %}
+<script>
+  let currentRouteData = null;
+
+  // Toggle between loop and point-to-point
+  function toggleLoopOption() {
+    const isLoop = document.getElementById("is-loop").checked;
+    const endAddressSection = document.getElementById("end-address-section");
+
+    if (isLoop) {
+      endAddressSection.style.display = "none";
+    } else {
+      endAddressSection.style.display = "block";
+    }
+  }
+
+  // Generate routes
+  async function generateRoutes() {
+    const startAddress = document.getElementById("start-address").value;
+    const endAddress = document.getElementById("end-address").value;
+    const isLoop = document.getElementById("is-loop").checked;
+    const distance = document.getElementById("distance").value;
+    const mode = document.getElementById("mode").value;
+    const resultDiv = document.getElementById("generate-result");
+
+    if (!startAddress) {
+      resultDiv.innerHTML = "Please enter a start address";
+      return;
+    }
+
+    if (!isLoop && !endAddress) {
+      resultDiv.innerHTML =
+        "Please enter an end address for point-to-point routes";
+      return;
+    }
+
+    resultDiv.innerHTML = "Generating routes...";
+
+    try {
+      const payload = {
+        start_address: startAddress,
+        distance: parseFloat(distance),
+        mode: mode,
+        is_loop: isLoop,
+      };
+
+      // Only include end_address if it's not a loop
+      if (!isLoop && endAddress) {
+        payload.end_address = endAddress;
+      }
+
+      const response = await fetch("/api/generate-routes/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify(payload),
+      });
+
+      const data = await response.json();
+      currentRouteData = data;
+
+      if (data.success) {
+        const routeType = data.is_loop ? "Loop" : "Point-to-Point";
+        resultDiv.innerHTML =
+          `✅ SUCCESS! Generated ${data.routes.length} ${routeType} routes\n\n` +
+          `Start: ${data.start_address}\n` +
+          (data.end_address ? `End: ${data.end_address}\n` : "") +
+          `Distance: ${data.distance}km\n` +
+          `Mode: ${data.mode}\n\n` +
+          `Routes:\n${data.routes
+            .map(
+              (route) =>
+                `• ${route.name} (${route.distance}km) - ${route.difficulty} - ${route.terrain}`
+            )
+            .join("\n")}`;
+
+        // Update current route display
+        document.getElementById("current-route").textContent = JSON.stringify(
+          data.routes[0],
+          null,
+          2
+        );
+      } else {
+        resultDiv.innerHTML = `❌ ERROR: ${data.error}`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `❌ NETWORK ERROR: ${error.message}`;
+    }
+  }
+
+  // Save route
+  async function saveRoute() {
+    const routeName = document.getElementById("route-name").value;
+    const resultDiv = document.getElementById("save-result");
+
+    if (!routeName) {
+      resultDiv.innerHTML = "Please enter a route name";
+      return;
+    }
+
+    if (
+      !currentRouteData ||
+      !currentRouteData.routes ||
+      currentRouteData.routes.length === 0
+    ) {
+      resultDiv.innerHTML = "Please generate a route first";
+      return;
+    }
+
+    resultDiv.innerHTML = "Saving route...";
+
+    try {
+      const response = await fetch("/api/save-route/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          name: routeName,
+          start_address: currentRouteData.start_address,
+          end_address: currentRouteData.end_address || "",
+          distance: currentRouteData.distance,
+          mode: currentRouteData.mode,
+          is_loop: currentRouteData.is_loop,
+          route_data: currentRouteData.routes[0],
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resultDiv.innerHTML = `✅ SUCCESS! Route saved with ID: ${data.route_id}`;
+      } else {
+        resultDiv.innerHTML = `❌ ERROR: ${data.error}`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `❌ NETWORK ERROR: ${error.message}`;
+    }
+  }
+
+  // Get saved routes
+  async function getSavedRoutes() {
+    const resultDiv = document.getElementById("saved-result");
+    resultDiv.innerHTML = "Loading saved routes...";
+
+    try {
+      const response = await fetch("/api/saved-routes/");
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.routes.length === 0) {
+          resultDiv.innerHTML = "No saved routes found";
+        } else {
+          resultDiv.innerHTML =
+            `✅ Found ${data.routes.length} saved routes:\n\n` +
+            data.routes
+              .map(
+                (route) =>
+                  `• ${route.name} - ${route.distance}km (${route.mode}) - ${
+                    route.is_loop ? "Loop" : "Point-to-Point"
+                  }`
+              )
+              .join("\n");
+        }
+      } else {
+        resultDiv.innerHTML = `❌ ERROR: ${data.error}`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `❌ NETWORK ERROR: ${error.message}`;
+    }
+  }
+
+  // NEW: Gamification functions
+  async function recordRun() {
+    const miles = document.getElementById("miles-run").value;
+    const resultDiv = document.getElementById("gamification-result");
+
+    if (!miles || miles <= 0) {
+      resultDiv.innerHTML = "Please enter valid miles";
+      return;
+    }
+
+    resultDiv.innerHTML = "Recording run...";
+
+    try {
+      const response = await fetch("/api/record-run/", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          miles: parseFloat(miles),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (data.success) {
+        resultDiv.innerHTML = `✅ Run recorded!\nMiles: ${miles}\nTotal Miles: ${data.total_miles}\nTotal Points: ${data.total_points}`;
+      } else {
+        resultDiv.innerHTML = `❌ ERROR: ${data.error}`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `❌ NETWORK ERROR: ${error.message}`;
+    }
+  }
+
+  async function getLeaderboard() {
+    const resultDiv = document.getElementById("gamification-result");
+    resultDiv.innerHTML = "Loading leaderboard...";
+
+    try {
+      const response = await fetch("/api/leaderboard/");
+      const data = await response.json();
+
+      if (data.success) {
+        if (data.leaderboard.length === 0) {
+          resultDiv.innerHTML = "No users on leaderboard yet";
+        } else {
+          resultDiv.innerHTML =
+            `🏆 LEADERBOARD:\n\n` +
+            data.leaderboard
+              .map(
+                (user) =>
+                  `#${user.rank} ${user.username} - ${user.total_miles} miles (${user.total_points} points)`
+              )
+              .join("\n");
+        }
+      } else {
+        resultDiv.innerHTML = `❌ ERROR: ${data.error}`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `❌ NETWORK ERROR: ${error.message}`;
+    }
+  }
+
+  async function getUserStats() {
+    const resultDiv = document.getElementById("gamification-result");
+    resultDiv.innerHTML = "Loading your stats...";
+
+    try {
+      const response = await fetch("/api/user-stats/");
+      const data = await response.json();
+
+      if (data.success) {
+        resultDiv.innerHTML =
+          `📊 YOUR STATS:\n\n` +
+          `Username: ${data.stats.username}\n` +
+          `Total Miles: ${data.stats.total_miles}\n` +
+          `Total Points: ${data.stats.total_points}\n\n` +
+          `BADGES:\n` +
+          (data.badges.length > 0
+            ? data.badges
+                .map(
+                  (badge) =>
+                    `★ ${badge.name} (earned at ${badge.miles_required} miles)`
+                )
+                .join("\n")
+            : "No badges yet - keep running!");
+      } else {
+        resultDiv.innerHTML = `❌ ERROR: ${data.error}`;
+      }
+    } catch (error) {
+      resultDiv.innerHTML = `❌ NETWORK ERROR: ${error.message}`;
+    }
+  }
+</script>
+{% endblock %}
