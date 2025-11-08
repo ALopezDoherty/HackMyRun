@@ -5,7 +5,7 @@ from geopy.distance import geodesic
 
 class RouteGenerator:
     def __init__(self):
-        self.geolocator = Nominatim(user_agent="run_explorer")
+        self.geolocator = Nominatim(user_agent="Hack_My_Run")
     
     def generate_routes(self, start_address, target_distance_km, num_routes=3):
         """
