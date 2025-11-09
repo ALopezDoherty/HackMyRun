@@ -1,0 +1,1321 @@
+{% extends 'base.html' %}
+{% load static %}
+
+{% block title %}HackMyRun - Dashboard{% endblock %}
+
+{% block extra_css %}
+<style>
+    * {
+        margin: 0;
+        padding: 0;
+        box-sizing: border-box;
+    }
+
+    :root {
+        --primary: #667eea;
+        --primary-dark: #5a67d8;
+        --secondary: #764ba2;
+        --accent: #f093fb;
+        --text: #2d3748;
+        --text-light: #718096;
+        --bg: #f7fafc;
+        --card-bg: #ffffff;
+        --border: #e2e8f0;
+        --success: #48bb78;
+        --warning: #ed8936;
+        --error: #f56565;
+    }
+
+    body {
+        font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: var(--text);
+        min-height: 100vh;
+    }
+
+    /* App Container */
+    .app-container {
+        display: flex;
+        min-height: 100vh;
+        background: var(--bg);
+    }
+
+    /* Sidebar */
+    .sidebar {
+        width: 380px;
+        background: var(--card-bg);
+        box-shadow: 4px 0 20px rgba(0,0,0,0.1);
+        display: flex;
+        flex-direction: column;
+        z-index: 1000;
+    }
+
+    .sidebar-header {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        padding: 25px;
+        text-align: center;
+        position: relative;
+    }
+
+    .sidebar-header h1 {
+        font-size: 24px;
+        font-weight: 700;
+        margin-bottom: 5px;
+    }
+
+    .sidebar-header p {
+        opacity: 0.9;
+        font-size: 14px;
+    }
+
+    .user-profile {
+        position: absolute;
+        top: 20px;
+        right: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .user-avatar {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255,255,255,0.2);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        cursor: pointer;
+    }
+
+    .sidebar-content {
+        flex: 1;
+        padding: 25px;
+        overflow-y: auto;
+    }
+
+    /* Cards */
+    .card {
+        background: var(--card-bg);
+        border-radius: 16px;
+        padding: 25px;
+        margin-bottom: 20px;
+        box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+        border: 1px solid var(--border);
+        transition: transform 0.2s, box-shadow 0.2s;
+    }
+
+    .card:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 30px rgba(0,0,0,0.12);
+    }
+
+    .card h3 {
+        color: var(--text);
+        margin-bottom: 20px;
+        font-size: 18px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+
+    .card h3 i {
+        color: var(--primary);
+    }
+
+    /* Form Elements */
+    .form-group {
+        margin-bottom: 20px;
+    }
+
+    .form-group label {
+        display: block;
+        margin-bottom: 8px;
+        font-weight: 600;
+        color: var(--text);
+        font-size: 14px;
+    }
+
+    .input-with-icon {
+        position: relative;
+    }
+
+    .input-with-icon i {
+        position: absolute;
+        left: 15px;
+        top: 50%;
+        transform: translateY(-50%);
+        color: var(--text-light);
+        z-index: 2;
+    }
+
+    .input-with-icon input,
+    .input-with-icon select {
+        width: 100%;
+        padding: 12px 15px 12px 45px;
+        border: 2px solid var(--border);
+        border-radius: 12px;
+        font-size: 14px;
+        transition: all 0.3s;
+        background: var(--card-bg);
+        position: relative;
+    }
+
+    .input-with-icon input:focus,
+    .input-with-icon select:focus {
+        outline: none;
+        border-color: var(--primary);
+        box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+    }
+
+    /* Fix for select dropdown text overlap */
+    .input-with-icon select {
+        appearance: none;
+        -webkit-appearance: none;
+        -moz-appearance: none;
+        background-image: url("data:image/svg+xml;charset=US-ASCII,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 4 5'><path fill='%23666' d='M2 0L0 2h4zm0 5L0 3h4z'/></svg>");
+        background-repeat: no-repeat;
+        background-position: right 15px center;
+        background-size: 12px;
+        padding-right: 40px;
+    }
+
+    .toggle-group {
+        display: flex;
+        background: var(--bg);
+        border-radius: 12px;
+        padding: 4px;
+        margin-bottom: 20px;
+    }
+
+    .toggle-option {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 8px;
+    }
+
+    .toggle-option.active {
+        background: var(--primary);
+        color: white;
+    }
+
+    /* Buttons */
+    .btn {
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
+        color: white;
+        border: none;
+        padding: 14px 20px;
+        border-radius: 12px;
+        font-size: 16px;
+        font-weight: 600;
+        cursor: pointer;
+        transition: all 0.3s;
+        width: 100%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+    }
+
+    .btn:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 8px 25px rgba(102, 126, 234, 0.3);
+    }
+
+    .btn-secondary {
+        background: var(--bg);
+        color: var(--text);
+        border: 2px solid var(--border);
+    }
+
+    .btn-secondary:hover {
+        background: white;
+        transform: translateY(-2px);
+    }
+
+    /* Route Cards */
+    .route-card {
+        background: var(--card-bg);
+        border-radius: 12px;
+        padding: 20px;
+        margin-bottom: 15px;
+        border: 2px solid var(--border);
+        transition: all 0.3s;
+        cursor: pointer;
+    }
+
+    .route-card:hover {
+        border-color: var(--primary);
+        transform: translateY(-2px);
+    }
+
+    .route-card.active {
+        border-color: var(--primary);
+        background: linear-gradient(135deg, #f8faff, #ffffff);
+    }
+
+    .route-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: flex-start;
+        margin-bottom: 15px;
+    }
+
+    .route-name {
+        font-weight: 600;
+        color: var(--text);
+        font-size: 16px;
+    }
+
+    .route-distance {
+        background: var(--primary);
+        color: white;
+        padding: 4px 12px;
+        border-radius: 20px;
+        font-size: 12px;
+        font-weight: 600;
+    }
+
+    .route-stats {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        margin-bottom: 15px;
+    }
+
+    .stat {
+        display: flex;
+        flex-direction: column;
+    }
+
+    .stat-label {
+        font-size: 12px;
+        color: var(--text-light);
+        margin-bottom: 4px;
+    }
+
+    .stat-value {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .difficulty-easy { color: var(--success); }
+    .difficulty-moderate { color: var(--warning); }
+    .difficulty-challenging { color: var(--error); }
+
+    /* Leaderboard */
+    .leaderboard-list {
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .leaderboard-item {
+        display: flex;
+        align-items: center;
+        padding: 15px;
+        background: var(--bg);
+        border-radius: 12px;
+        transition: all 0.2s;
+    }
+
+    .leaderboard-item:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+    }
+
+    .leaderboard-rank {
+        width: 30px;
+        height: 30px;
+        border-radius: 50%;
+        background: var(--primary);
+        color: white;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-weight: 700;
+        font-size: 14px;
+        margin-right: 15px;
+    }
+
+    .leaderboard-rank.top-3 {
+        background: linear-gradient(135deg, #f093fb, #f5576c);
+    }
+
+    .leaderboard-user {
+        flex: 1;
+    }
+
+    .leaderboard-name {
+        font-weight: 600;
+        font-size: 14px;
+    }
+
+    .leaderboard-stats {
+        font-size: 12px;
+        color: var(--text-light);
+    }
+
+    .leaderboard-score {
+        font-weight: 700;
+        color: var(--primary);
+    }
+
+    /* Recent Activity */
+    .activity-list {
+        display: flex;
+        flex-direction: column;
+        gap: 15px;
+    }
+
+    .activity-item {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        padding: 10px 0;
+        border-bottom: 1px solid var(--border);
+    }
+
+    .activity-item:last-child {
+        border-bottom: none;
+    }
+
+    .activity-icon {
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: var(--bg);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        color: var(--primary);
+    }
+
+    .activity-details {
+        flex: 1;
+    }
+
+    .activity-title {
+        font-weight: 600;
+        font-size: 14px;
+        margin-bottom: 4px;
+    }
+
+    .activity-time {
+        font-size: 12px;
+        color: var(--text-light);
+    }
+
+    /* Map */
+    .map-container {
+        flex: 1;
+        position: relative;
+    }
+
+    #map {
+        width: 100%;
+        height: 100%;
+    }
+
+    /* Loading */
+    .loading {
+        display: none;
+        text-align: center;
+        padding: 40px;
+        color: var(--text-light);
+    }
+
+    .loading-spinner {
+        width: 40px;
+        height: 40px;
+        border: 4px solid var(--border);
+        border-top: 4px solid var(--primary);
+        border-radius: 50%;
+        animation: spin 1s linear infinite;
+        margin: 0 auto 15px;
+    }
+
+    @keyframes spin {
+        0% { transform: rotate(0deg); }
+        100% { transform: rotate(360deg); }
+    }
+
+    /* Settings Modal */
+    .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0,0,0,0.5);
+        z-index: 2000;
+        backdrop-filter: blur(5px);
+    }
+
+    .modal {
+        position: absolute;
+        top: 50%;
+        left: 50%;
+        transform: translate(-50%, -50%);
+        background: var(--card-bg);
+        border-radius: 20px;
+        padding: 30px;
+        width: 90%;
+        max-width: 500px;
+        max-height: 90vh;
+        overflow-y: auto;
+        box-shadow: 0 20px 60px rgba(0,0,0,0.2);
+    }
+
+    .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 25px;
+    }
+
+    .modal-header h2 {
+        color: var(--text);
+        font-size: 24px;
+        font-weight: 700;
+    }
+
+    .close-modal {
+        background: none;
+        border: none;
+        font-size: 24px;
+        color: var(--text-light);
+        cursor: pointer;
+        padding: 5px;
+    }
+
+    .close-modal:hover {
+        color: var(--text);
+    }
+
+    /* Tabs */
+    .tabs {
+        display: flex;
+        background: var(--bg);
+        border-radius: 12px;
+        padding: 4px;
+        margin-bottom: 20px;
+    }
+
+    .tab {
+        flex: 1;
+        padding: 12px;
+        text-align: center;
+        border-radius: 8px;
+        cursor: pointer;
+        transition: all 0.3s;
+        font-weight: 500;
+        font-size: 14px;
+    }
+
+    .tab.active {
+        background: var(--primary);
+        color: white;
+    }
+
+    /* Responsive */
+    @media (max-width: 768px) {
+        .app-container {
+            flex-direction: column;
+        }
+        .sidebar {
+            width: 100%;
+            height: 50vh;
+        }
+    }
+
+    /* Fix for running logo animation */
+    .running-logo {
+        display: inline-block;
+        animation: run 2s ease-in-out infinite;
+    }
+
+    @keyframes run {
+        0%, 100% { transform: translateX(0) rotate(0deg); }
+        25% { transform: translateX(5px) rotate(5deg); }
+        75% { transform: translateX(-5px) rotate(-5deg); }
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- App Dashboard -->
+<div class="app-container" id="app-dashboard">
+    <!-- Sidebar -->
+    <div class="sidebar">
+        <div class="sidebar-header">
+            <h1><i class="fas fa-running running-logo"></i> HackMyRun</h1>
+            <p>Premium Running Route Planner</p>
+            <div class="user-profile">
+                <div class="user-avatar" onclick="toggleUserMenu()">
+                    <i class="fas fa-user"></i>
+                </div>
+            </div>
+        </div>
+
+        <div class="sidebar-content">
+            <!-- Tabs for different sections -->
+            <div class="tabs">
+                <div class="tab active" onclick="switchTab('routes')">Routes</div>
+                <div class="tab" onclick="switchTab('leaderboard')">Leaderboard</div>
+                <div class="tab" onclick="switchTab('activity')">Activity</div>
+            </div>
+
+            <!-- Routes Tab -->
+            <div id="routes-tab">
+                <!-- Route Settings Card -->
+                <div class="card">
+                    <h3><i class="fas fa-route"></i> Plan Your Run</h3>
+                    
+                    <div class="form-group">
+                        <label>Start Location</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-map-marker-alt"></i>
+                            <input type="text" id="start-address" placeholder="Enter starting point" value="New York">
+                        </div>
+                    </div>
+
+                    <div class="form-group" id="end-address-group" style="display: none;">
+                        <label>End Location</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-flag-checkered"></i>
+                            <input type="text" id="end-address" placeholder="Enter destination">
+                        </div>
+                    </div>
+
+                    <div class="toggle-group">
+                        <div class="toggle-option active" onclick="setRouteType('loop')">
+                            <i class="fas fa-sync-alt"></i> Loop
+                        </div>
+                        <div class="toggle-option" onclick="setRouteType('point')">
+                            <i class="fas fa-arrow-right"></i> Point to Point
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Distance (km)</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-ruler"></i>
+                            <input type="number" id="distance" value="5" min="1" max="42" step="0.5">
+                        </div>
+                    </div>
+
+                    <div class="form-group">
+                        <label>Route Mode</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-running"></i>
+                            <select id="mode">
+                                <option value="endurance">Endurance (Flat Routes)</option>
+                                <option value="conditioning">Conditioning (Hilly Routes)</option>
+                            </select>
+                        </div>
+                    </div>
+
+                    <button class="btn" onclick="generateRoutes()">
+                        <i class="fas fa-bolt"></i> Generate Routes
+                    </button>
+
+                    <button class="btn btn-secondary" onclick="openSettings()" style="margin-top: 10px;">
+                        <i class="fas fa-cog"></i> Route Preferences
+                    </button>
+                </div>
+
+                <!-- Loading -->
+                <div class="loading" id="loading">
+                    <div class="loading-spinner"></div>
+                    <p>Finding the perfect running routes...</p>
+                </div>
+
+                <!-- Results Card -->
+                <div class="card">
+                    <h3><i class="fas fa-list"></i> Generated Routes</h3>
+                    <div id="results">
+                        <p style="text-align: center; color: var(--text-light); padding: 20px;">
+                            Configure your run and click generate to see routes
+                        </p>
+                    </div>
+                </div>
+
+                <!-- Save Route Section -->
+                <div class="card">
+                    <h3><i class="fas fa-save"></i> Save Route</h3>
+                    <div class="form-group">
+                        <div class="input-with-icon">
+                            <i class="fas fa-tag"></i>
+                            <input type="text" id="route-name" placeholder="Route name" style="width: 100%">
+                        </div>
+                    </div>
+                    <button class="btn btn-secondary" onclick="saveRoute()">
+                        <i class="fas fa-save"></i> Save Current Route
+                    </button>
+                    <div id="save-result" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+
+            <!-- Leaderboard Tab -->
+            <div id="leaderboard-tab" style="display: none;">
+                <div class="card">
+                    <h3><i class="fas fa-trophy"></i> Weekly Leaderboard</h3>
+                    <div class="leaderboard-list" id="leaderboard-list">
+                        <!-- Leaderboard items will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3><i class="fas fa-award"></i> Your Stats</h3>
+                    <div class="route-stats">
+                        <div class="stat">
+                            <div class="stat-label">WEEKLY RANK</div>
+                            <div class="stat-value" id="user-rank">#15</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">DISTANCE</div>
+                            <div class="stat-value" id="user-distance">28.5 km</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">ACTIVITIES</div>
+                            <div class="stat-value" id="user-activities">5</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">POINTS</div>
+                            <div class="stat-value" id="user-points">1,250</div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Record Run Section -->
+                <div class="card">
+                    <h3><i class="fas fa-flag-checkered"></i> Record Run</h3>
+                    <div class="form-group">
+                        <label>Distance (miles):</label>
+                        <div class="input-with-icon">
+                            <i class="fas fa-road"></i>
+                            <input type="number" id="miles-run" placeholder="Miles" value="3" min="0.1" max="50" step="0.1">
+                        </div>
+                    </div>
+                    <button class="btn" onclick="recordRun()">
+                        <i class="fas fa-flag-checkered"></i> Record Run
+                    </button>
+                    <div id="gamification-result" style="margin-top: 10px;"></div>
+                </div>
+            </div>
+
+            <!-- Activity Tab -->
+            <div id="activity-tab" style="display: none;">
+                <div class="card">
+                    <h3><i class="fas fa-history"></i> Recent Activity</h3>
+                    <div class="activity-list" id="activity-list">
+                        <!-- Activity items will be populated here -->
+                    </div>
+                </div>
+                
+                <div class="card">
+                    <h3><i class="fas fa-chart-line"></i> Progress</h3>
+                    <div style="height: 200px; background: var(--bg); border-radius: 12px; display: flex; align-items: center; justify-content: center; color: var(--text-light);">
+                        Weekly Distance Chart
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Map -->
+    <div class="map-container">
+        <div id="map"></div>
+    </div>
+</div>
+
+<!-- Settings Modal -->
+<div class="modal-overlay" id="settings-modal">
+    <div class="modal">
+        <div class="modal-header">
+            <h2><i class="fas fa-sliders-h"></i> Route Preferences</h2>
+            <button class="close-modal" onclick="closeSettings()">&times;</button>
+        </div>
+
+        <div class="form-group">
+            <label>Preferred Terrain</label>
+            <div class="input-with-icon">
+                <i class="fas fa-mountain"></i>
+                <select id="terrain">
+                    <option value="flat">🏞️ Flat - Easy, consistent elevation</option>
+                    <option value="hilly">⛰️ Hilly - Challenging with elevation</option>
+                    <option value="mixed" selected>🌄 Mixed - Variety of terrain</option>
+                </select>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label>Route Options</label>
+            <div style="display: flex; flex-direction: column; gap: 15px;">
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="avoid-roads" checked>
+                    <span>🚗 Avoid busy roads</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="include-parks" checked>
+                    <span>🌳 Include parks and green spaces</span>
+                </label>
+                <label style="display: flex; align-items: center; gap: 10px;">
+                    <input type="checkbox" id="include-water">
+                    <span>💧 Prefer routes with water views</span>
+                </label>
+            </div>
+        </div>
+
+        <button class="btn" onclick="savePreferences()">
+            <i class="fas fa-save"></i> Save Preferences
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block extra_js %}
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+    // Application state
+    let map;
+    let currentRoutes = [];
+    let currentRouteType = 'loop';
+    let currentRouteData = null;
+    let userPreferences = {
+        terrain: 'mixed',
+        avoid_roads: true,
+        include_parks: true,
+        include_water: false
+    };
+
+    // Initialize the application
+    function initApp() {
+        // Initialize map
+        initMap();
+        // Load initial data
+        loadUserData();
+    }
+
+    // Load user data from backend
+    async function loadUserData() {
+        try {
+            // Load leaderboard
+            const leaderboardResponse = await fetch('/api/leaderboard/');
+            if (leaderboardResponse.ok) {
+                const data = await leaderboardResponse.json();
+                if (data.success) {
+                    populateLeaderboard(data.leaderboard);
+                }
+            }
+
+            // Load user stats
+            const statsResponse = await fetch('/api/user-stats/');
+            if (statsResponse.ok) {
+                const data = await statsResponse.json();
+                if (data.success) {
+                    updateUserStats(data.stats);
+                    populateActivity(data.badges);
+                }
+            }
+            
+        } catch (error) {
+            console.error('Error loading user data:', error);
+            // Use mock data as fallback
+            populateMockData();
+        }
+    }
+
+    // Mock data fallback
+    function populateMockData() {
+        const mockLeaderboard = [
+            { username: "Alex Johnson", total_miles: 42.5, total_points: 3250 },
+            { username: "Sarah Miller", total_miles: 38.2, total_points: 2980 },
+            { username: "Mike Chen", total_miles: 35.8, total_points: 2750 },
+            { username: "Emma Wilson", total_miles: 33.5, total_points: 2600 },
+            { username: "You", total_miles: 28.5, total_points: 1250, is_current_user: true }
+        ];
+        populateLeaderboard(mockLeaderboard);
+        
+        const mockStats = { total_miles: 28.5, total_points: 1250, rank: 15 };
+        updateUserStats(mockStats);
+        
+        const mockBadges = [
+            { name: "50 Mile Club", miles_required: 50, earned_date: "2024-01-15" }
+        ];
+        populateActivity(mockBadges);
+    }
+
+    // Initialize map
+    function initMap() {
+        map = L.map('map').setView([40.7128, -74.0060], 13);
+        
+        L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+            attribution: '© OpenStreetMap contributors'
+        }).addTo(map);
+    }
+
+    // Set route type
+    function setRouteType(type) {
+        currentRouteType = type;
+        
+        // Update toggle UI
+        document.querySelectorAll('.toggle-option').forEach(opt => {
+            opt.classList.remove('active');
+        });
+        event.target.classList.add('active');
+        
+        // Show/hide end address
+        const endGroup = document.getElementById('end-address-group');
+        endGroup.style.display = type === 'point' ? 'block' : 'none';
+    }
+
+    // Generate routes using backend API
+    async function generateRoutes() {
+        const startAddress = document.getElementById('start-address').value;
+        const endAddress = document.getElementById('end-address').value;
+        const distance = document.getElementById('distance').value;
+        const mode = document.getElementById('mode').value;
+        const isLoop = currentRouteType === 'loop';
+
+        if (!startAddress) {
+            alert('Please enter a start location');
+            return;
+        }
+
+        if (currentRouteType === 'point' && !endAddress) {
+            alert('Please enter an end location for point-to-point routes');
+            return;
+        }
+
+        // Show loading
+        document.getElementById('loading').style.display = 'block';
+        document.getElementById('results').innerHTML = '';
+
+        // Clear previous routes
+        clearMap();
+
+        try {
+            const payload = {
+                start_address: startAddress,
+                distance: parseFloat(distance),
+                mode: mode,
+                is_loop: isLoop,
+            };
+
+            // Only include end_address if it's not a loop
+            if (!isLoop && endAddress) {
+                payload.end_address = endAddress;
+            }
+
+            const response = await fetch('/api/generate-routes/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify(payload),
+            });
+
+            const data = await response.json();
+            currentRouteData = data;
+
+            if (data.success) {
+                displayRoutes(data.routes);
+                if (data.routes.length > 0) {
+                    displayRouteOnMap(data.routes[0]);
+                }
+            } else {
+                showError(data.error || 'Failed to generate routes');
+            }
+        } catch (error) {
+            showError('Network error: ' + error.message);
+        } finally {
+            document.getElementById('loading').style.display = 'none';
+        }
+    }
+
+    // Save route using backend API
+    async function saveRoute() {
+        const routeName = document.getElementById('route-name').value;
+        const resultDiv = document.getElementById('save-result');
+
+        if (!routeName) {
+            resultDiv.innerHTML = '<span style="color: var(--error);">Please enter a route name</span>';
+            return;
+        }
+
+        if (!currentRouteData || !currentRouteData.routes || currentRouteData.routes.length === 0) {
+            resultDiv.innerHTML = '<span style="color: var(--error);">Please generate a route first</span>';
+            return;
+        }
+
+        resultDiv.innerHTML = 'Saving route...';
+
+        try {
+            const response = await fetch('/api/save-route/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    name: routeName,
+                    start_address: currentRouteData.start_address,
+                    end_address: currentRouteData.end_address || '',
+                    distance: currentRouteData.distance,
+                    mode: currentRouteData.mode,
+                    is_loop: currentRouteData.is_loop,
+                    route_data: currentRouteData.routes[0],
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                resultDiv.innerHTML = '<span style="color: var(--success);">✅ Route saved successfully!</span>';
+            } else {
+                resultDiv.innerHTML = '<span style="color: var(--error);">❌ ' + (data.error || 'Failed to save route') + '</span>';
+            }
+        } catch (error) {
+            resultDiv.innerHTML = '<span style="color: var(--error);">❌ Network error: ' + error.message + '</span>';
+        }
+    }
+
+    // Record run using backend API
+    async function recordRun() {
+        const miles = document.getElementById('miles-run').value;
+        const resultDiv = document.getElementById('gamification-result');
+
+        if (!miles || miles <= 0) {
+            resultDiv.innerHTML = '<span style="color: var(--error);">Please enter valid miles</span>';
+            return;
+        }
+
+        resultDiv.innerHTML = 'Recording run...';
+
+        try {
+            const response = await fetch('/api/record-run/', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRFToken': getCookie('csrftoken')
+                },
+                body: JSON.stringify({
+                    miles: parseFloat(miles),
+                }),
+            });
+
+            const data = await response.json();
+
+            if (data.success) {
+                resultDiv.innerHTML = `
+                    <span style="color: var(--success);">
+                        ✅ Run recorded!<br>
+                        Miles: ${miles}<br>
+                        Total Miles: ${data.total_miles}<br>
+                        Total Points: ${data.total_points}
+                    </span>
+                `;
+                // Refresh user stats
+                loadUserData();
+            } else {
+                resultDiv.innerHTML = '<span style="color: var(--error);">❌ ' + (data.error || 'Failed to record run') + '</span>';
+            }
+        } catch (error) {
+            resultDiv.innerHTML = '<span style="color: var(--error);">❌ Network error: ' + error.message + '</span>';
+        }
+    }
+
+    // Populate leaderboard with data from backend
+    function populateLeaderboard(leaderboardData) {
+        const leaderboardList = document.getElementById('leaderboard-list');
+        let html = '';
+        
+        leaderboardData.forEach((user, index) => {
+            const rankClass = index < 3 ? 'top-3' : '';
+            const userClass = user.is_current_user ? 'current-user' : '';
+            
+            html += `
+                <div class="leaderboard-item ${userClass}">
+                    <div class="leaderboard-rank ${rankClass}">${index + 1}</div>
+                    <div class="leaderboard-user">
+                        <div class="leaderboard-name">${user.username}</div>
+                        <div class="leaderboard-stats">${user.total_miles} miles • ${user.total_points} points</div>
+                    </div>
+                    <div class="leaderboard-score">${user.total_points}</div>
+                </div>
+            `;
+        });
+        
+        leaderboardList.innerHTML = html;
+    }
+
+    // Update user stats
+    function updateUserStats(stats) {
+        document.getElementById('user-rank').textContent = `#${stats.rank || 'N/A'}`;
+        document.getElementById('user-distance').textContent = `${stats.total_miles || 0} miles`;
+        document.getElementById('user-activities').textContent = stats.total_activities || 0;
+        document.getElementById('user-points').textContent = stats.total_points || 0;
+    }
+
+    // Populate activity with badges
+    function populateActivity(badges) {
+        const activityList = document.getElementById('activity-list');
+        let html = '';
+        
+        if (badges && badges.length > 0) {
+            badges.forEach(badge => {
+                html += `
+                    <div class="activity-item">
+                        <div class="activity-icon">
+                            <i class="fas fa-trophy"></i>
+                        </div>
+                        <div class="activity-details">
+                            <div class="activity-title">Earned Badge: ${badge.name}</div>
+                            <div class="activity-time">Achieved at ${badge.miles_required} miles</div>
+                        </div>
+                    </div>
+                `;
+            });
+        } else {
+            html = `
+                <div class="activity-item">
+                    <div class="activity-icon">
+                        <i class="fas fa-running"></i>
+                    </div>
+                    <div class="activity-details">
+                        <div class="activity-title">Start running to earn badges!</div>
+                        <div class="activity-time">Complete your first run to get started</div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        activityList.innerHTML = html;
+    }
+
+    // Display routes in sidebar
+    function displayRoutes(routes) {
+        const results = document.getElementById('results');
+        
+        if (!routes || routes.length === 0) {
+            results.innerHTML = '<p style="text-align: center; color: var(--text-light); padding: 20px;">No routes found. Try different locations or settings.</p>';
+            return;
+        }
+        
+        let html = '';
+        
+        routes.forEach((route, index) => {
+            // Ensure route has required properties
+            const routeName = route.name || `Route ${index + 1}`;
+            const distance = route.distance || 'N/A';
+            const difficulty = route.difficulty || 'Moderate';
+            const terrain = route.terrain || 'Mixed';
+            const estimatedTime = route.estimated_time || '30 min';
+            const elevationGain = route.elevation_gain || 0;
+            const description = route.description || 'A great running route';
+            
+            html += `
+                <div class="route-card" onclick="displayRouteOnMap(${index})">
+                    <div class="route-header">
+                        <div class="route-name">${routeName}</div>
+                        <div class="route-distance">${distance} km</div>
+                    </div>
+                    <div class="route-stats">
+                        <div class="stat">
+                            <div class="stat-label">DIFFICULTY</div>
+                            <div class="stat-value difficulty-${difficulty.toLowerCase()}">${difficulty}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">TERRAIN</div>
+                            <div class="stat-value">${terrain}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">TIME</div>
+                            <div class="stat-value">${estimatedTime}</div>
+                        </div>
+                        <div class="stat">
+                            <div class="stat-label">ELEVATION</div>
+                            <div class="stat-value">${elevationGain}m</div>
+                        </div>
+                    </div>
+                    <div style="font-size: 12px; color: var(--text-light);">${description}</div>
+                </div>
+            `;
+        });
+        
+        results.innerHTML = html;
+        currentRoutes = routes;
+    }
+
+    // Display route on map - FIXED VERSION
+    function displayRouteOnMap(routeIndex) {
+        clearMap();
+        
+        const route = currentRoutes[routeIndex];
+        
+        // Check if route has valid waypoints
+        if (!route || !route.waypoints || !Array.isArray(route.waypoints) || route.waypoints.length === 0) {
+            console.warn('No valid waypoints for route:', route);
+            // Generate default waypoints if none exist
+            generateDefaultWaypoints(route);
+            return;
+        }
+
+        try {
+            // Create polyline
+            const polyline = L.polyline(route.waypoints, {
+                color: '#667eea',
+                weight: 6,
+                opacity: 0.8,
+                smoothFactor: 1
+            }).addTo(map);
+
+            // Add start marker
+            const startMarker = L.marker(route.waypoints[0]).addTo(map)
+                .bindPopup(`<b>🏁 Start</b><br>${route.name || 'Running Route'}`)
+                .openPopup();
+
+            // Add end marker for point-to-point routes
+            if (route.waypoints.length > 1 && (!currentRouteData || !currentRouteData.is_loop)) {
+                const endMarker = L.marker(route.waypoints[route.waypoints.length - 1]).addTo(map)
+                    .bindPopup(`<b>🎯 Finish</b><br>${route.name || 'Running Route'}`);
+            }
+
+            // Fit map to route bounds
+            const bounds = polyline.getBounds();
+            if (bounds.isValid()) {
+                map.fitBounds(bounds.pad(0.1));
+            }
+        } catch (error) {
+            console.error('Error displaying route on map:', error);
+            generateDefaultWaypoints(route);
+        }
+    }
+
+    // Generate default waypoints if route has none
+    function generateDefaultWaypoints(route) {
+        const centerLat = 40.7128;
+        const centerLng = -74.0060;
+        
+        const defaultWaypoints = [
+            [centerLat, centerLng],
+            [centerLat + 0.01, centerLng + 0.01],
+            [centerLat + 0.02, centerLng],
+            [centerLat + 0.01, centerLng - 0.01],
+            [centerLat, centerLng]
+        ];
+        
+        // Create polyline with default waypoints
+        const polyline = L.polyline(defaultWaypoints, {
+            color: '#667eea',
+            weight: 6,
+            opacity: 0.8,
+            smoothFactor: 1
+        }).addTo(map);
+
+        // Add start marker
+        const startMarker = L.marker(defaultWaypoints[0]).addTo(map)
+            .bindPopup(`<b>🏁 Start</b><br>${route.name || 'Running Route'}`)
+            .openPopup();
+
+        // Fit map to bounds
+        map.fitBounds(polyline.getBounds().pad(0.1));
+    }
+
+    // Utility functions
+    function clearMap() {
+        map.eachLayer(function(layer) {
+            if (layer instanceof L.Polyline || layer instanceof L.Marker) {
+                map.removeLayer(layer);
+            }
+        });
+    }
+
+    function showError(message) {
+        document.getElementById('results').innerHTML = `
+            <div style="background: #fed7d7; color: #c53030; padding: 15px; border-radius: 8px; text-align: center;">
+                <i class="fas fa-exclamation-triangle"></i> ${message}
+            </div>
+        `;
+    }
+
+    function getCookie(name) {
+        let cookieValue = null;
+        if (document.cookie && document.cookie !== '') {
+            const cookies = document.cookie.split(';');
+            for (let i = 0; i < cookies.length; i++) {
+                const cookie = cookies[i].trim();
+                if (cookie.substring(0, name.length + 1) === (name + '=')) {
+                    cookieValue = decodeURIComponent(cookie.substring(name.length + 1));
+                    break;
+                }
+            }
+        }
+        return cookieValue;
+    }
+
+    // Tab switching
+    function switchTab(tabName) {
+        document.getElementById('routes-tab').style.display = 'none';
+        document.getElementById('leaderboard-tab').style.display = 'none';
+        document.getElementById('activity-tab').style.display = 'none';
+        
+        document.querySelectorAll('.tab').forEach(tab => {
+            tab.classList.remove('active');
+        });
+        
+        document.getElementById(`${tabName}-tab`).style.display = 'block';
+        event.target.classList.add('active');
+
+        // Load data when switching to leaderboard tab
+        if (tabName === 'leaderboard') {
+            loadUserData();
+        }
+    }
+
+    // Settings modal functions
+    function openSettings() {
+        document.getElementById('settings-modal').style.display = 'block';
+        document.getElementById('terrain').value = userPreferences.terrain;
+        document.getElementById('avoid-roads').checked = userPreferences.avoid_roads;
+        document.getElementById('include-parks').checked = userPreferences.include_parks;
+        document.getElementById('include-water').checked = userPreferences.include_water;
+    }
+
+    function closeSettings() {
+        document.getElementById('settings-modal').style.display = 'none';
+    }
+
+    function savePreferences() {
+        userPreferences = {
+            terrain: document.getElementById('terrain').value,
+            avoid_roads: document.getElementById('avoid-roads').checked,
+            include_parks: document.getElementById('include-parks').checked,
+            include_water: document.getElementById('include-water').checked
+        };
+        closeSettings();
+    }
+
+    function toggleUserMenu() {
+        alert("User menu would open here - in a real app this would show profile options");
+    }
+
+    // Initialize the app when the page loads
+    window.onload = initApp;
+</script>
+{% endblock %}

@@ -4,6 +4,7 @@ from . import api
 
 urlpatterns = [
     path('', views.index, name='index'),
+    path('dashboard/', views.dashboard, name='dashboard'),
     
     # Route generation and management
     path('api/generate-routes/', api.generate_routes_api, name='api_generate_routes'),
